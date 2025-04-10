@@ -9,6 +9,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type Config struct {
+	TagName string `yaml:"last_downloaded_tag"`
+}
+
 func getConfigPath() string {
 	var configDir string
 

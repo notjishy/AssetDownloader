@@ -19,15 +19,11 @@ type Asset struct {
 	DownloadURL string `json:"browser_download_url"`
 }
 
-type Config struct {
-	TagName string `yaml:"last_downloaded_tag"`
-}
-
 func main() {
-	repo := ""
-	filename := ""
+	repo := "itslilscorp/MCParks-Resource-Pack-Updated"
+	filename := "mcparkspack-1.21.zip"
 	// including trailing "/" in directory path
-	destination := ""
+	destination := "/home/jishy/.local/share/PrismLauncher/instances/1.21.1/minecraft/resourcepacks/"
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
 
