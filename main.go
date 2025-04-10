@@ -29,6 +29,10 @@ func main() {
 	filename := os.Args[2]
 	destination := os.Args[3]
 
+	if destination[len(destination)-1:] != "/" {
+		destination += "/"
+	}
+
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
 
 	response, err := http.Get(url)
