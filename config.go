@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -13,7 +14,34 @@ type Config struct {
 	TagName string `yaml:"last_downloaded_tag"`
 }
 
-func getConfigPath() string {
+func createConfigIdentifier(repo string, filename string, destination string) string {
+	var cleanRepo string
+	for i := range len(repo) {
+		if repo[i] == '/' {
+			cleanRepo = repo[:i] + repo[i+1:]
+			break
+		}
+	}
+
+	// shorten asset name
+	if len(filename) > 20 {
+		filename = filename[:20]
+	}
+
+	// use 3rd to last directory name (this is so users in prism launcher will have the instance name included in identifer)
+	instName := filepath.Base(destination)
+	pathParts := strings.Split(filepath.Clean(destination), string(filepath.Separator))
+
+	if len(pathParts) >= 3 {
+		instName = pathParts[len(pathParts)-3]
+	}
+
+	// create config file identifier
+	configIdentifier := cleanRepo + filename + instName
+	return configIdentifier
+}
+
+func getConfigPath(configIdentifier string) string {
 	var configDir string
 
 	switch runtime.GOOS {
@@ -36,7 +64,7 @@ func getConfigPath() string {
 
 	os.MkdirAll(configDir, 0755)
 
-	return filepath.Join(configDir, ".ghpdconfig.yaml")
+	return filepath.Join(configDir, configIdentifier+".yaml")
 }
 
 func writeConfig(config Config, configPath string) error {

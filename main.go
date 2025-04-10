@@ -20,10 +20,14 @@ type Asset struct {
 }
 
 func main() {
-	repo := "itslilscorp/MCParks-Resource-Pack-Updated"
-	filename := "mcparkspack-1.21.zip"
-	// including trailing "/" in directory path
-	destination := "/home/jishy/.local/share/PrismLauncher/instances/1.21.1/minecraft/resourcepacks/"
+	if len(os.Args) < 4 {
+		fmt.Println("Usage: githubpackdownloader <repo> <filename> <destination>")
+		os.Exit(1)
+	}
+
+	repo := os.Args[1]
+	filename := os.Args[2]
+	destination := os.Args[3]
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
 
@@ -41,7 +45,8 @@ func main() {
 	}
 
 	// check if already exists
-	configPath := getConfigPath()
+	configIdentifier := createConfigIdentifier(repo, filename, destination)
+	configPath := getConfigPath(configIdentifier)
 	config := loadConfig(configPath)
 	denyDownload := false
 	if _, err := os.Stat(destination + filename); err == nil {
