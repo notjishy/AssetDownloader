@@ -14,7 +14,9 @@ type Config struct {
 	TagName string `yaml:"last_downloaded_tag"`
 }
 
-func createConfigIdentifier(repo string, filename string, destination string) string {
+var configIdentifier string
+
+func createConfigIdentifier(repo string, filename string, destination string) {
 	var cleanRepo string
 	for i := range len(repo) {
 		if repo[i] == '/' {
@@ -37,11 +39,10 @@ func createConfigIdentifier(repo string, filename string, destination string) st
 	}
 
 	// create config file identifier
-	configIdentifier := cleanRepo + filename + instName
-	return configIdentifier
+	configIdentifier = cleanRepo + filename + instName
 }
 
-func getConfigPath(configIdentifier string) string {
+func getConfigPath() string {
 	var configDir string
 
 	switch runtime.GOOS {
@@ -67,7 +68,9 @@ func getConfigPath(configIdentifier string) string {
 	return filepath.Join(configDir, configIdentifier+".yaml")
 }
 
-func writeConfig(config Config, configPath string) error {
+func writeConfig(config Config) error {
+	configPath := getConfigPath()
+
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return err
@@ -80,7 +83,9 @@ func writeConfig(config Config, configPath string) error {
 	return err
 }
 
-func loadConfig(configPath string) Config {
+func loadConfig() Config {
+	configPath := getConfigPath()
+
 	config := Config{}
 	// check if config file exists
 	if _, err := os.Stat(configPath); err == nil {
@@ -99,7 +104,7 @@ func loadConfig(configPath string) Config {
 	} else {
 		// does not exist
 		config.TagName = ""
-		err := writeConfig(config, configPath)
+		err := writeConfig(config)
 		if err != nil {
 			fmt.Printf("Error writing config: %v\n", err)
 			os.Exit(1)
