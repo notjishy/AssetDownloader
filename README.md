@@ -31,7 +31,10 @@ This will be a basic tutorial on installing depending on your computer's operati
 ```bash
 mkdir C:\bin
 ```
-2. Move the downloaded from the releases tab into that folder.
+2. Move the downloaded file from the releases tab into that folder.
+
+***Note:*** it is recommended that you rename the file to remove the OS info before moving it. It is not required, but whatever the file is named is what the command will be called. To match the usage examples above, name the file `githubpackdownloader` (keep .exe if it is there)
+
 3. Add the script to your PATH
    - Go to **Advanced system settings**
    - Click **Environment Variables**
@@ -46,6 +49,8 @@ It should respond with a message clarifying how to use the command.
 
 ### MacOS and Linux:
 1. Move the file downloaded from the releases tab into your PATH directory
+
+***Note:*** it is recommended that you rename the file to remove the OS info before moving it. It is not required, but whatever the file is named is what the command will be called. To match the usage examples above, name the file `githubpackdownloader`
 ```bash
 sudo mv <file> /usr/local/bin/
 ```
