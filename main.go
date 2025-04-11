@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// check if already exists
-	config := loadConfig()
+	config := loadConfig(repo, filename, destination)
 	denyDownload := false
 	if _, err := os.Stat(destination + filename); err == nil {
 		// check version match
@@ -77,7 +77,7 @@ func main() {
 
 		// update yaml config with new info
 		config.TagName = release.TagName
-		err = writeConfig(config)
+		err = writeConfig(config, repo, filename, destination)
 		if err != nil {
 			fmt.Printf("Error writing config file: %v\n", err)
 			os.Exit(1)
