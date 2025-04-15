@@ -49,11 +49,11 @@ func main() {
 	}
 
 	// check if already exists
-	config := loadConfig(repo, filename, destination)
+	record := loadRecord(repo, filename, destination)
 	denyDownload := false
 	if _, err := os.Stat(destination + filename); err == nil {
 		// check version match
-		if config.TagName == release.TagName {
+		if record.TagName == release.TagName {
 			denyDownload = true
 		}
 	}
@@ -75,9 +75,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		// update yaml config with new info
-		config.TagName = release.TagName
-		err = writeConfig(config, repo, filename, destination)
+		// update yaml record with new info
+		record.TagName = release.TagName
+		err = writeRecord(record, repo, filename, destination)
 		if err != nil {
 			fmt.Printf("Error writing config file: %v\n", err)
 			os.Exit(1)
