@@ -55,7 +55,11 @@ func main() {
 	}
 
 	// check if already exists
-	record := loadRecord(repo, filename, destination)
+	record, err := loadRecord(repo, filename, destination)
+	if err != nil {
+		fmt.Printf("Error loading record: %v\n", err)
+		os.Exit(1)
+	}
 	denyDownload := false
 	if _, err := os.Stat(destination + filename); err == nil {
 		// check version match

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -41,7 +40,7 @@ func createRecordIdentifier(repo string, filename string, destination string) st
 	return recordIdentifier
 }
 
-func getRecordPath(repo string, filename string, destination string) string {
+func getRecordPath(repo string, filename string, destination string) (error, string) {
 	var recordDir string
 
 	switch runtime.GOOS {
@@ -62,13 +61,19 @@ func getRecordPath(repo string, filename string, destination string) string {
 		}
 	}
 
-	os.MkdirAll(recordDir, 0755)
+	err := os.MkdirAll(recordDir, 0755)
+	if err != nil {
+		return err, ""
+	}
 
-	return filepath.Join(recordDir, createRecordIdentifier(repo, filename, destination)+".yaml")
+	return nil, filepath.Join(recordDir, createRecordIdentifier(repo, filename, destination)+".yaml")
 }
 
 func writeRecord(record Record, repo string, filename string, destination string) error {
-	recordPath := getRecordPath(repo, filename, destination)
+	err, recordPath := getRecordPath(repo, filename, destination)
+	if err != nil {
+		return err
+	}
 
 	data, err := yaml.Marshal(record)
 	if err != nil {
@@ -82,32 +87,29 @@ func writeRecord(record Record, repo string, filename string, destination string
 	return err
 }
 
-func loadRecord(repo string, filename string, destination string) Record {
-	recordPath := getRecordPath(repo, filename, destination)
+func loadRecord(repo string, filename string, destination string) (Record, error) {
+	err, recordPath := getRecordPath(repo, filename, destination)
+	if err != nil {
+		return Record{}, err
+	}
 
 	record := Record{}
 	// check if record file exists
-	if _, err := os.Stat(recordPath); err == nil {
-		// does exists
-		data, err := os.ReadFile(recordPath)
-		if err != nil {
-			fmt.Printf("Error reading YAML file: %v\n", err)
-			os.Exit(1)
+	data, err := os.ReadFile(recordPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// file not does not exist create new record
+			record.TagName = ""
+			if err := writeRecord(record, repo, filename, destination); err != nil {
+				return Record{}, err
+			}
+			return record, nil
 		}
-
-		err = yaml.Unmarshal(data, &record)
-		if err != nil {
-			fmt.Printf("Error unmarshaling YAML: %v\n", err)
-			os.Exit(1)
-		}
-	} else {
-		// does not exist
-		record.TagName = ""
-		err := writeRecord(record, repo, filename, destination)
-		if err != nil {
-			fmt.Printf("Error writing config: %v\n", err)
-			os.Exit(1)
-		}
+		return Record{}, err
 	}
-	return record
+
+	if err := yaml.Unmarshal(data, &record); err != nil {
+		return Record{}, nil
+	}
+	return record, nil
 }
