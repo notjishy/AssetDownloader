@@ -40,7 +40,13 @@ func main() {
 		fmt.Printf("Response returned with error: %v\n", err)
 		os.Exit(1)
 	}
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Printf("Error closing response body: %v\n", err)
+			os.Exit(1)
+		}
+	}(response.Body)
 
 	var release Release
 	if err := json.NewDecoder(response.Body).Decode(&release); err != nil {
@@ -90,14 +96,26 @@ func downloadFile(destination string, filename string, url string) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Printf("Error closing response body: %v\n", err)
+			os.Exit(1)
+		}
+	}(response.Body)
 
 	// create file
 	output, err := os.Create(destination + filename)
 	if err != nil {
 		return err
 	}
-	defer output.Close()
+	defer func(output *os.File) {
+		err := output.Close()
+		if err != nil {
+			fmt.Printf("Error closing output file: %v\n", err)
+			os.Exit(1)
+		}
+	}(output)
 
 	// write information to file
 	_, err = io.Copy(output, response.Body)
