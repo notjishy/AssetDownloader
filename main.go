@@ -20,77 +20,90 @@ type Asset struct {
 }
 
 func main() {
-	if len(os.Args) < 4 {
-		fmt.Println("Usage: githubpackdownloader <repo> <filename> <destination>")
+	usageString := "Usage: githubpackdownloader <repo> <filename> [<repo> <filename>] <destination>"
+
+	// check if we have repo+filename+destination at minimum
+	if (len(os.Args) - 1) < 3 {
+		fmt.Println(usageString)
 		os.Exit(1)
 	}
 
-	repo := os.Args[1]
-	filename := os.Args[2]
-	destination := os.Args[3]
+	// check if odd number of args (missing filename for a repo)
+	if (len(os.Args)-2)%2 != 0 {
+		fmt.Println(usageString)
+		os.Exit(1)
+	}
+
+	destination := os.Args[len(os.Args)-1]
 
 	if destination[len(destination)-1:] != "/" {
 		destination += "/"
 	}
 
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
+	// loop through all given repo + filename pairs
+	for i := 1; i < len(os.Args)-1; i += 2 {
+		repo := os.Args[i]
+		filename := os.Args[i+1]
 
-	response, err := http.Get(url)
-	if err != nil {
-		fmt.Printf("Response returned with error: %v\n", err)
-		os.Exit(1)
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
+		url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
+
+		response, err := http.Get(url)
 		if err != nil {
-			fmt.Printf("Error closing response body: %v\n", err)
+			fmt.Printf("Response returned with error: %v\n", err)
 			os.Exit(1)
 		}
-	}(response.Body)
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				fmt.Printf("Error closing response body: %v\n", err)
+				os.Exit(1)
+			}
+		}(response.Body)
 
-	var release Release
-	if err := json.NewDecoder(response.Body).Decode(&release); err != nil {
-		fmt.Printf("Error parsing JSON: %v\n", err)
-		os.Exit(1)
-	}
-
-	// check if already exists
-	record, err := loadRecord(repo, filename, destination)
-	if err != nil {
-		fmt.Printf("Error loading record: %v\n", err)
-		os.Exit(1)
-	}
-	denyDownload := false
-	if _, err := os.Stat(destination + filename); err == nil {
-		// check version match
-		if record.TagName == release.TagName {
-			denyDownload = true
+		var release Release
+		if err := json.NewDecoder(response.Body).Decode(&release); err != nil {
+			fmt.Printf("Error parsing JSON: %v\n", err)
+			os.Exit(1)
 		}
-	}
 
-	if !denyDownload {
-		// acquire asset
-		var file Asset
-		for _, asset := range release.Assets {
-			if asset.Name == filename {
-				file = asset
-				break
+		// check if already exists
+		record, err := loadRecord(repo, filename, destination)
+		if err != nil {
+			fmt.Printf("Error loading record: %v\n", err)
+			os.Exit(1)
+		}
+		denyDownload := false
+		if _, err := os.Stat(destination + filename); err == nil {
+			// check version match
+			if record.TagName == release.TagName {
+				denyDownload = true
 			}
 		}
 
-		// download file
-		err := downloadFile(destination, filename, file.DownloadURL)
-		if err != nil {
-			fmt.Printf("Error downloading file: %v\n", err)
-			os.Exit(1)
-		}
+		if !denyDownload {
+			// acquire asset
+			var file Asset
+			for _, asset := range release.Assets {
+				if asset.Name == filename {
+					file = asset
+					break
+				}
+			}
 
-		// update yaml record with new info
-		record.TagName = release.TagName
-		err = writeRecord(record, repo, filename, destination)
-		if err != nil {
-			fmt.Printf("Error writing config file: %v\n", err)
-			os.Exit(1)
+			// download file
+			err := downloadFile(destination, filename, file.DownloadURL)
+			if err != nil {
+				fmt.Printf("Error downloading file: %v\n", err)
+				os.Exit(1)
+			}
+
+			// update yaml record with new info
+			record.TagName = release.TagName
+			err = writeRecord(record, repo, filename, destination)
+			if err != nil {
+				fmt.Printf("Error writing config file: %v\n", err)
+				os.Exit(1)
+			}
 		}
 	}
 }
