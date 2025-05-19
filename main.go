@@ -45,24 +45,10 @@ func main() {
 		repo := os.Args[i]
 		filename := os.Args[i+1]
 
-		url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
-
-		response, err := http.Get(url)
+		// get latest release, in separate function to isolate defer calls
+		release, err := getRelease(repo)
 		if err != nil {
-			fmt.Printf("Response returned with error: %v\n", err)
-			os.Exit(1)
-		}
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				fmt.Printf("Error closing response body: %v\n", err)
-				os.Exit(1)
-			}
-		}(response.Body)
-
-		var release Release
-		if err := json.NewDecoder(response.Body).Decode(&release); err != nil {
-			fmt.Printf("Error parsing JSON: %v\n", err)
+			fmt.Printf("Error getting release: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -106,6 +92,30 @@ func main() {
 			}
 		}
 	}
+}
+
+// acquire the latest release from the given GitHub repo
+func getRelease(repo string) (*Release, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
+
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("response returned with error: %v", err)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Printf("Error closing response body: %v\n", err)
+			os.Exit(1)
+		}
+	}(response.Body)
+
+	var release Release
+	if err := json.NewDecoder(response.Body).Decode(&release); err != nil {
+		return nil, fmt.Errorf("error parsing JSON: %v", err)
+	}
+
+	return &release, nil
 }
 
 func downloadFile(destination string, filename string, url string) error {
