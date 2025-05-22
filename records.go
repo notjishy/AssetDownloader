@@ -46,18 +46,18 @@ func getRecordPath(repo string, filename string, destination string) (string, er
 	switch runtime.GOOS {
 	case "windows":
 		// %APPDATA%
-		recordDir = filepath.Join(os.Getenv("APPDATA"), "GithubPackDownloader")
+		recordDir = filepath.Join(os.Getenv("APPDATA"), "AssetDownloader")
 	case "darwin": // macOS
 		// ~/Library/Application Support/
 		homeDir, _ := os.UserHomeDir()
-		recordDir = filepath.Join(homeDir, "Library", "Application Support", "GithubPackDownloader")
+		recordDir = filepath.Join(homeDir, "Library", "Application Support", "AssetDownloader")
 	default: // Linux
 		// ~/.config/
-		recordDir = filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "GithubPackDownloader")
-		if recordDir == filepath.Join("", "GithubPackDownloader") {
+		recordDir = filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "AssetDownloader")
+		if recordDir == filepath.Join("", "AssetDownloader") {
 			// XDG_CONFIG_HOME not set, fallback to ~/.config
 			homeDir, _ := os.UserHomeDir()
-			recordDir = filepath.Join(homeDir, ".config", "GithubPackDownloader")
+			recordDir = filepath.Join(homeDir, ".config", "AssetDownloader")
 		}
 	}
 

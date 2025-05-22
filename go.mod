@@ -1,4 +1,4 @@
-module github.com/githubpackdownloader
+module jishe.wtf/assetdownloader
 
 go 1.23.7
 
