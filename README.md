@@ -20,7 +20,7 @@ assetdownloader <repo> <filename> <destination> [<repo> <filename> <destination>
 ```
 or
 ```bash
-assetdownloader <repo> <filename> [<repo> <filename>] <-a | --download-all>]
+assetdownloader <repo> <filename> [<repo> <filename>] <-a | --download-all>
 ```
 
 #### Example in terminal
