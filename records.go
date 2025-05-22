@@ -40,7 +40,7 @@ func createRecordIdentifier(repo string, filename string, destination string) st
 	return recordIdentifier
 }
 
-func getRecordPath(repo string, filename string, destination string) (error, string) {
+func getRecordPath(repo string, filename string, destination string) (string, error) {
 	var recordDir string
 
 	switch runtime.GOOS {
@@ -63,14 +63,14 @@ func getRecordPath(repo string, filename string, destination string) (error, str
 
 	err := os.MkdirAll(recordDir, 0755)
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
-	return nil, filepath.Join(recordDir, createRecordIdentifier(repo, filename, destination)+".yaml")
+	return filepath.Join(recordDir, createRecordIdentifier(repo, filename, destination)+".yaml"), nil
 }
 
 func writeRecord(record Record, repo string, filename string, destination string) error {
-	err, recordPath := getRecordPath(repo, filename, destination)
+	recordPath, err := getRecordPath(repo, filename, destination)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func writeRecord(record Record, repo string, filename string, destination string
 }
 
 func loadRecord(repo string, filename string, destination string) (Record, error) {
-	err, recordPath := getRecordPath(repo, filename, destination)
+	recordPath, err := getRecordPath(repo, filename, destination)
 	if err != nil {
 		return Record{}, err
 	}
