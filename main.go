@@ -19,8 +19,14 @@ type Asset struct {
 	DownloadURL string `json:"browser_download_url"`
 }
 
+var destination string
+var finalArg string
+
+var hasDownloadAllFlag bool
+
 func main() {
-	usageString := "Usage: githubpackdownloader <repo> <filename> [<repo> <filename>] <destination>"
+	usageString := "Usage: <repo> <filename> [<repo> <filename>] <destination> <-a | --download-all>\n"
+	usageString += "<repo> <filename> <destination> [<repo> <filename> <destination>]"
 
 	// check if we have repo+filename+destination at minimum
 	if (len(os.Args) - 1) < 3 {
@@ -28,22 +34,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	// check if odd number of args (missing filename for a repo)
-	if (len(os.Args)-2)%2 != 0 {
+	// check for download all flag
+	finalArg = os.Args[len(os.Args)-1]
+	if finalArg == "-a" || finalArg == "--download-all" {
+		hasDownloadAllFlag = true
+	}
+
+	// check if arg counts are valid
+	if (len(os.Args)-2)%2 == 0 {
 		fmt.Println(usageString)
 		os.Exit(1)
 	}
 
-	destination := os.Args[len(os.Args)-1]
-
-	if destination[len(destination)-1:] != "/" {
-		destination += "/"
+	// only run if flag is at the end
+	if hasDownloadAllFlag {
+		destination = parseDownloadPath(os.Args[len(os.Args)-2])
 	}
 
 	// loop through all given repo + filename pairs
-	for i := 1; i < len(os.Args)-1; i += 2 {
+	for i := 1; i < len(os.Args)-2; i += 2 {
 		repo := os.Args[i]
 		filename := os.Args[i+1]
+
+		// avoid repeating parsing if not needed
+		if !hasDownloadAllFlag {
+			destination = parseDownloadPath(os.Args[i+2])
+			i++
+		}
 
 		// get latest release, in separate function to isolate defer calls
 		release, err := getRelease(repo)
@@ -58,38 +75,36 @@ func main() {
 			fmt.Printf("Error loading record: %v\n", err)
 			os.Exit(1)
 		}
-		denyDownload := false
+
 		if _, err := os.Stat(destination + filename); err == nil {
 			// check version match
 			if record.TagName == release.TagName {
-				denyDownload = true
+				continue // skip to next loop iteration
 			}
 		}
 
-		if !denyDownload {
-			// acquire asset
-			var file Asset
-			for _, asset := range release.Assets {
-				if asset.Name == filename {
-					file = asset
-					break
-				}
+		// acquire asset
+		var file Asset
+		for _, asset := range release.Assets {
+			if asset.Name == filename {
+				file = asset
+				break
 			}
+		}
 
-			// download file
-			err := downloadFile(destination, filename, file.DownloadURL)
-			if err != nil {
-				fmt.Printf("Error downloading file: %v\n", err)
-				os.Exit(1)
-			}
+		// download file
+		err = downloadFile(destination, filename, file.DownloadURL)
+		if err != nil {
+			fmt.Printf("Error downloading file: %v\n", err)
+			os.Exit(1)
+		}
 
-			// update yaml record with new info
-			record.TagName = release.TagName
-			err = writeRecord(record, repo, filename, destination)
-			if err != nil {
-				fmt.Printf("Error writing config file: %v\n", err)
-				os.Exit(1)
-			}
+		// update yaml record with new info
+		record.TagName = release.TagName
+		err = writeRecord(record, repo, filename, destination)
+		if err != nil {
+			fmt.Printf("Error writing config file: %v\n", err)
+			os.Exit(1)
 		}
 	}
 }
@@ -116,6 +131,16 @@ func getRelease(repo string) (*Release, error) {
 	}
 
 	return &release, nil
+}
+
+// setting destination variable and path formatting
+func parseDownloadPath(path string) string {
+	// ensure trailing "/" always present
+	if path[len(path)-1:] != "/" {
+		path += "/"
+	}
+
+	return path
 }
 
 func downloadFile(destination string, filename string, url string) error {

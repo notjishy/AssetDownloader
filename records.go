@@ -109,7 +109,7 @@ func loadRecord(repo string, filename string, destination string) (Record, error
 	}
 
 	if err := yaml.Unmarshal(data, &record); err != nil {
-		return Record{}, nil
+		return Record{}, err
 	}
 	return record, nil
 }
