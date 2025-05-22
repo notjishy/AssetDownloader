@@ -5,7 +5,7 @@ This is a simple script I have made to automatically download a specified file f
 After the script has been installed to your computer's default terminal path (see below for how to do that), it can be run with the following command:
 
 ```bash
-assetdownloader <repo> <filename> <destination path>
+assetdownloader <repo> <filename> <destination path> <-a | --download-all>
 ```
 ![Screenshot From 2025-04-09 21-49-07](https://github.com/user-attachments/assets/7af9953b-087f-4c38-afc2-e70a32be0264)
 
