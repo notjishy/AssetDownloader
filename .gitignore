@@ -20,8 +20,9 @@
 # Go workspace file
 go.work
 
-# IntelliJ stuff
+# Editors & IDEs
 .idea/
+.vscode/
 
 # MacOS
 .DS_Store
