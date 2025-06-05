@@ -28,26 +28,30 @@ func main() {
 	usageString := "Usage: <repo> <filename> [<repo> <filename>] <destination> <-a | --download-all>\n"
 	usageString += "<repo> <filename> <destination> [<repo> <filename> <destination>]"
 
-	// check if we have repo+filename+destination at minimum
-	if (len(os.Args) - 1) < 3 {
-		fmt.Println(usageString)
-		os.Exit(1)
-	}
-
 	// check for download all flag
 	finalArg = os.Args[len(os.Args)-1]
 	if finalArg == "-a" || finalArg == "--download-all" {
 		hasDownloadAllFlag = true
 	}
 
-	// check if arg counts are valid
-	if (len(os.Args)-2)%2 == 0 {
+	// check if minimum number of arguments is provided and
+	// if amount of arguments is a value of the below sequence
+	// 4, 7, 10, 13, 16, 19, 22, 25, ...
+	if ((len(os.Args) - 1) < 3) || ((len(os.Args)-1)%3 != 0 && !hasDownloadAllFlag) {
+		fmt.Println("Error: Invalid number of arguments provided.")
 		fmt.Println(usageString)
 		os.Exit(1)
 	}
 
 	// only run if flag is at the end
 	if hasDownloadAllFlag {
+		if (len(os.Args)-1)%2 != 0 {
+			fmt.Println("Error: Invalid number of arguments provided with download all flag.")
+			fmt.Println(usageString)
+			os.Exit(1)
+		}
+
+		fmt.Println("Flag identified, downloading all files to the same destination.")
 		destination = parseDownloadPath(os.Args[len(os.Args)-2])
 	}
 
@@ -56,7 +60,7 @@ func main() {
 		repo := os.Args[i]
 		filename := os.Args[i+1]
 
-		// avoid repeating parsing if not needed
+		// get download destination for current asset
 		if !hasDownloadAllFlag {
 			destination = parseDownloadPath(os.Args[i+2])
 			i++
