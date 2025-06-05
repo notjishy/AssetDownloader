@@ -4,40 +4,13 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
 type Record struct {
 	TagName string `yaml:"last_downloaded_tag"`
-}
-
-func createRecordIdentifier(repo string, filename string, destination string) string {
-	var cleanRepo string
-	for i := range len(repo) {
-		if repo[i] == '/' {
-			cleanRepo = repo[:i] + repo[i+1:]
-			break
-		}
-	}
-
-	// shorten asset name
-	if len(filename) > 20 {
-		filename = filename[:20]
-	}
-
-	// use 3rd to last directory name (this is so users in prism launcher will have the instance name included in identifer)
-	instName := filepath.Base(destination)
-	pathParts := strings.Split(filepath.Clean(destination), string(filepath.Separator))
-
-	if len(pathParts) >= 3 {
-		instName = pathParts[len(pathParts)-3]
-	}
-
-	// create record file identifier
-	recordIdentifier := cleanRepo + filename + instName
-	return recordIdentifier
 }
 
 func getRecordPath(repo string, filename string, destination string) (string, error) {
@@ -66,7 +39,12 @@ func getRecordPath(repo string, filename string, destination string) (string, er
 		return "", err
 	}
 
-	return filepath.Join(recordDir, createRecordIdentifier(repo, filename, destination)+".yaml"), nil
+	// generate UUID for record file
+	var combinedString string = repo + filename + destination
+
+	// use combined string to generate a Version 3 / MD5 UUID
+	var uuidString string = uuid.NewMD5(uuid.Nil, []byte(combinedString)).String()
+	return filepath.Join(recordDir, uuidString+".yaml"), nil
 }
 
 func writeRecord(record Record, repo string, filename string, destination string) error {
