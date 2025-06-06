@@ -11,12 +11,17 @@ import (
 
 type Release struct {
 	TagName string  `json:"tag_name"`
+	Author  Author  `json:"author"`
 	Assets  []Asset `json:"assets"`
 }
 
 type Asset struct {
 	Name        string `json:"name"`
 	DownloadURL string `json:"browser_download_url"`
+}
+
+type Author struct {
+	Name string `json:"login"`
 }
 
 var destination string
@@ -74,7 +79,7 @@ func main() {
 		}
 
 		// check if already exists
-		record, err := loadRecord(repo, filename, destination)
+		record, err := loadRecord(repo, filename)
 		if err != nil {
 			fmt.Printf("Error loading record: %v\n", err)
 			os.Exit(1)
@@ -87,7 +92,7 @@ func main() {
 			}
 		}
 
-		// acquire asset
+		// acquire asset data
 		var file Asset
 		for _, asset := range release.Assets {
 			if asset.Name == filename {
@@ -105,7 +110,9 @@ func main() {
 
 		// update yaml record with new info
 		record.TagName = release.TagName
-		err = writeRecord(record, repo, filename, destination)
+		record.AuthorName = release.Author.Name
+
+		err = writeRecord(record)
 		if err != nil {
 			fmt.Printf("Error writing config file: %v\n", err)
 			os.Exit(1)

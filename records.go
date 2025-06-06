@@ -10,10 +10,14 @@ import (
 )
 
 type Record struct {
-	TagName string `yaml:"last_downloaded_tag"`
+	TagName        string `yaml:"last_downloaded_tag"`
+	RepositoryName string `'yaml:"repository_name"`
+	FileName       string `yaml:"file_name"`
+	AuthorName     string `yaml:"author_name"`
+	DownloadPath   string `'yaml:"download_path"`
 }
 
-func getRecordPath(repo string, filename string, destination string) (string, error) {
+func getRecordPath(record Record) (string, error) {
 	var recordDir string
 
 	switch runtime.GOOS {
@@ -40,15 +44,15 @@ func getRecordPath(repo string, filename string, destination string) (string, er
 	}
 
 	// generate UUID for record file
-	var combinedString string = repo + filename + destination
+	var combinedString string = record.RepositoryName + record.FileName + record.DownloadPath
 
 	// use combined string to generate a Version 3 / MD5 UUID
 	var uuidString string = uuid.NewMD5(uuid.Nil, []byte(combinedString)).String()
 	return filepath.Join(recordDir, uuidString+".yaml"), nil
 }
 
-func writeRecord(record Record, repo string, filename string, destination string) error {
-	recordPath, err := getRecordPath(repo, filename, destination)
+func writeRecord(record Record) error {
+	recordPath, err := getRecordPath(record)
 	if err != nil {
 		return err
 	}
@@ -65,20 +69,24 @@ func writeRecord(record Record, repo string, filename string, destination string
 	return err
 }
 
-func loadRecord(repo string, filename string, destination string) (Record, error) {
-	recordPath, err := getRecordPath(repo, filename, destination)
+func loadRecord(repo string, filename string) (Record, error) {
+	var record Record = Record{}
+
+	record.RepositoryName = repo
+	record.FileName = filename
+	record.DownloadPath = destination
+
+	recordPath, err := getRecordPath(record)
 	if err != nil {
 		return Record{}, err
 	}
 
-	record := Record{}
 	// check if record file exists
 	data, err := os.ReadFile(recordPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// file not does not exist create new record
-			record.TagName = ""
-			if err := writeRecord(record, repo, filename, destination); err != nil {
+			if err := writeRecord(record); err != nil {
 				return Record{}, err
 			}
 			return record, nil
