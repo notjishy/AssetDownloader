@@ -7,6 +7,8 @@
 *.dll
 *.so
 *.dylib
+bin/*_linux
+bin/*_macos
 
 # Test binary, built with `go test -c`
 *.test
