@@ -14,6 +14,11 @@ var Version string = "dev"
 var BuildDate string = "unknown"
 
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: assetdownloader <command> [options]\n\nAvailable commands:\n  list\n  download\n  version")
+		os.Exit(1)
+	}
+
 	switch os.Args[1] {
 	case "list": // list all saved records
 		list, err := commands.ListRecords()
