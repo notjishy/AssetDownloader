@@ -40,7 +40,7 @@ func main() {
 	}
 
 	// check if minimum number of arguments is provided and
-	// if amount of arguments is a value of the below sequence
+	// if amount of arguments is NOT a value of the below sequence
 	// 4, 7, 10, 13, 16, 19, 22, 25, ...
 	if ((len(os.Args) - 1) < 3) || ((len(os.Args)-1)%3 != 0 && !hasDownloadAllFlag) {
 		fmt.Println("Error: Invalid number of arguments provided.")
@@ -85,11 +85,16 @@ func main() {
 			os.Exit(1)
 		}
 
-		if _, err := os.Stat(destination + filename); err == nil {
+		_, err = os.Stat(destination + filename)
+		switch err {
+		case nil:
 			// check version match
 			if record.TagName == release.TagName {
 				continue // skip to next loop iteration
 			}
+		default:
+			fmt.Printf("Error getting file info: %v\n", err)
+			os.Exit(1)
 		}
 
 		// acquire asset data
