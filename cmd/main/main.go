@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+
+	"jishe.wtf/assetdownloader/internal/records"
 )
 
 type Release struct {
@@ -79,22 +81,17 @@ func main() {
 		}
 
 		// check if already exists
-		record, err := loadRecord(repo, filename)
+		record, err := records.Load(repo, filename, destination)
 		if err != nil {
 			fmt.Printf("Error loading record: %v\n", err)
 			os.Exit(1)
 		}
 
-		_, err = os.Stat(destination + filename)
-		switch err {
-		case nil:
+		if _, err := os.Stat(destination + filename); err == nil {
 			// check version match
 			if record.TagName == release.TagName {
 				continue // skip to next loop iteration
 			}
-		default:
-			fmt.Printf("Error getting file info: %v\n", err)
-			os.Exit(1)
 		}
 
 		// acquire asset data
@@ -117,7 +114,7 @@ func main() {
 		record.TagName = release.TagName
 		record.AuthorName = release.Author.Name
 
-		err = writeRecord(record)
+		err = records.Write(record)
 		if err != nil {
 			fmt.Printf("Error writing config file: %v\n", err)
 			os.Exit(1)

@@ -1,4 +1,4 @@
-package main
+package records
 
 import (
 	"os"
@@ -17,7 +17,7 @@ type Record struct {
 	DownloadPath   string `'yaml:"download_path"`
 }
 
-func getRecordPath(record Record) (string, error) {
+func getPath(record Record) (string, error) {
 	var recordDir string
 
 	switch runtime.GOOS {
@@ -51,8 +51,8 @@ func getRecordPath(record Record) (string, error) {
 	return filepath.Join(recordDir, uuidString+".yaml"), nil
 }
 
-func writeRecord(record Record) error {
-	recordPath, err := getRecordPath(record)
+func Write(record Record) error {
+	recordPath, err := getPath(record)
 	if err != nil {
 		return err
 	}
@@ -69,14 +69,14 @@ func writeRecord(record Record) error {
 	return err
 }
 
-func loadRecord(repo string, filename string) (Record, error) {
+func Load(repo string, filename string, destination string) (Record, error) {
 	var record Record = Record{}
 
 	record.RepositoryName = repo
 	record.FileName = filename
 	record.DownloadPath = destination
 
-	recordPath, err := getRecordPath(record)
+	recordPath, err := getPath(record)
 	if err != nil {
 		return Record{}, err
 	}
@@ -86,7 +86,7 @@ func loadRecord(repo string, filename string) (Record, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			// file not does not exist create new record
-			if err := writeRecord(record); err != nil {
+			if err := Write(record); err != nil {
 				return Record{}, err
 			}
 			return record, nil
