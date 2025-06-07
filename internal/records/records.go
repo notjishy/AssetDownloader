@@ -1,6 +1,7 @@
 package records
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,9 +16,10 @@ type Record struct {
 	FileName       string `yaml:"file_name"`
 	AuthorName     string `yaml:"author_name"`
 	DownloadPath   string `'yaml:"download_path"`
+	UUID           string `yaml:"uuid"`
 }
 
-func getPath(record Record) (string, error) {
+func getRecordDir() string {
 	var recordDir string
 
 	switch runtime.GOOS {
@@ -38,24 +40,72 @@ func getPath(record Record) (string, error) {
 		}
 	}
 
-	err := os.MkdirAll(recordDir, 0755)
-	if err != nil {
-		return "", err
-	}
+	return recordDir
+}
 
+func getUUID(record Record) string {
 	// generate UUID for record file
 	var combinedString string = record.RepositoryName + record.FileName + record.DownloadPath
 
 	// use combined string to generate a Version 3 / MD5 UUID
 	var uuidString string = uuid.NewMD5(uuid.Nil, []byte(combinedString)).String()
+
+	return uuidString
+}
+
+func getPath(record Record) (string, error) {
+	var recordDir string = getRecordDir()
+
+	err := os.MkdirAll(recordDir, 0755)
+	if err != nil {
+		return "", err
+	}
+
+	var uuidString string = getUUID(record)
 	return filepath.Join(recordDir, uuidString+".yaml"), nil
 }
 
+// GetRecords returns an array of all records stored in the records/config directory
+func GetRecords() ([]Record, error) {
+	var records []Record
+
+	recordDir := getRecordDir()
+	files, err := os.ReadDir(recordDir)
+	if err != nil {
+		return nil, fmt.Errorf("error reading record directory: %v", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue // skip directories they are not records
+		}
+
+		recordPath := filepath.Join(recordDir, file.Name())
+		data, err := os.ReadFile(recordPath)
+		if err != nil {
+			return nil, fmt.Errorf("error reading record file %s: %v", file.Name(), err)
+		}
+
+		var record Record
+		if err := yaml.Unmarshal(data, &record); err != nil {
+			return nil, fmt.Errorf("error unmarshalling record file %s: %v", file.Name(), err)
+		}
+
+		records = append(records, record)
+	}
+
+	return records, nil
+}
+
+// Write saves a record file to the records/config directory
 func Write(record Record) error {
 	recordPath, err := getPath(record)
 	if err != nil {
 		return err
 	}
+
+	// save the UUID to the record
+	record.UUID = getUUID(record)
 
 	data, err := yaml.Marshal(record)
 	if err != nil {
@@ -69,6 +119,8 @@ func Write(record Record) error {
 	return err
 }
 
+// Load retrieves a record from the records/config directory,
+// and begins the creation of a new record if it does not exist.
 func Load(repo string, filename string, destination string) (Record, error) {
 	var record Record = Record{}
 
