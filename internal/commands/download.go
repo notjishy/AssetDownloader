@@ -10,11 +10,6 @@ import (
 	"jishe.wtf/assetdownloader/internal/records"
 )
 
-var destination string
-var finalArg string
-
-var hasDownloadAllFlag bool
-
 type Release struct {
 	TagName string  `json:"tag_name"`
 	Author  Author  `json:"author"`
@@ -33,6 +28,13 @@ type Author struct {
 // Download downloads the latest release of the specified GitHub repository asset.
 // If it already exists as the latest version, it will skip it.
 func Download(args []string) error {
+	var destination string
+	var finalArg string
+	var hasDownloadAllFlag bool
+
+	uString := "Usage: download <repo> <filename> [<repo> <filename>] <destination> <-a | --download-all>\n"
+	uString += "download <repo> <filename> <destination> [<repo> <filename> <destination>]\n"
+
 	// check for download all flag
 	finalArg = args[len(args)-1]
 	if finalArg == "-a" || finalArg == "--download-all" {
@@ -43,13 +45,13 @@ func Download(args []string) error {
 	// if amount of arguments is NOT a value of the below sequence
 	// 4, 7, 10, 13, 16, 19, 22, 25, ...
 	if ((len(args) - 1) < 3) || ((len(args)-1)%3 != 0 && !hasDownloadAllFlag) {
-		return fmt.Errorf("invalid number of arguments provided\n\n%s", getUsageString())
+		return fmt.Errorf("invalid number of arguments provided\n\n%s", uString)
 	}
 
 	// only run if flag is at the end
 	if hasDownloadAllFlag {
 		if (len(args)-1)%2 != 0 {
-			return fmt.Errorf("invalid number of arguments provided with download all flag\n\n%s", getUsageString())
+			return fmt.Errorf("invalid number of arguments provided with download all flag\n\n%s", uString)
 		}
 
 		fmt.Println("Flag identified...")
@@ -112,14 +114,6 @@ func Download(args []string) error {
 	}
 
 	return nil
-}
-
-// returns the usage string for the download command.
-func getUsageString() string {
-	uString := "Usage: download <repo> <filename> [<repo> <filename>] <destination> <-a | --download-all>\n"
-	uString += "download <repo> <filename> <destination> [<repo> <filename> <destination>]\n"
-
-	return uString
 }
 
 // acquire the latest release from the given GitHub repo

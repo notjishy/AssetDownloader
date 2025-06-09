@@ -14,15 +14,16 @@ var Version string = "dev"
 var BuildDate string = "unknown"
 
 func main() {
-	usage := "Usage: assetdownloader <command> [options]\n\nAvailable commands:\n  list\n  download\n  version"
+	uString := "Usage: assetdownloader <command> [options]\n\nAvailable commands:\n  list\n  download\n  version"
 
 	if len(os.Args) < 2 {
-		fmt.Println(usage)
+		fmt.Println(uString)
 		os.Exit(1)
 	}
 
 	switch os.Args[1] {
-	case "list": // list all saved records
+	// list all saved records
+	case "list":
 		list, err := commands.ListRecords()
 		if err != nil {
 			fmt.Printf("Error listing records: %v\n", err)
@@ -30,15 +31,18 @@ func main() {
 		}
 
 		fmt.Println("All Saved Records: \n\n" + list)
+	// download assets from Github repositories
 	case "download":
 		err := commands.Download(os.Args[1:])
 		if err != nil {
 			fmt.Printf("Error downloading asset(s): %v\n", err)
 			os.Exit(1)
 		}
+	// display version information
 	case "version":
 		fmt.Println("AssetDownloader Version: " + Version + "\nBuild Date: " + BuildDate)
+	// not a real command
 	default:
-		fmt.Println("Unknown command: " + os.Args[1] + "\n\n" + usage)
+		fmt.Println("Unknown command: " + os.Args[1] + "\n\n" + uString)
 	}
 }
