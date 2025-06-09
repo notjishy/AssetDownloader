@@ -62,9 +62,8 @@ It should respond with a message clarifying how to use the command.
 ### MacOS and Linux:
 1. Move the file downloaded from the releases tab into your PATH directory
 
-***Note:*** it is recommended that you rename the file to remove the OS info before moving it. It is not required, but whatever the file is named is what the command will be called. To match the usage examples above, name the file `assetdownloader`
 ```bash
-sudo mv <file> /usr/local/bin/
+sudo mv <file> /usr/local/bin/assetdownloader
 ```
 2. Verify it is working by opening a command-prompt window and running
 ```bash
