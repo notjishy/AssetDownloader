@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"golang.org/x/sync/errgroup"
+
 	"jishe.wtf/assetdownloader/internal/records"
 )
 
@@ -58,59 +60,32 @@ func Download(args []string) error {
 		destination = parseDownloadPath(args[len(args)-2])
 	}
 
+	// for goroutine thread syncing and error handling
+	g := new(errgroup.Group)
+
 	// loop through all given repo + filename pairs
 	for i := 1; i < len(args)-2; i += 2 {
-		repo := args[i]
-		filename := args[i+1]
-
 		// get download destination for current asset
 		if !hasDownloadAllFlag {
 			destination = parseDownloadPath(args[i+2])
 			i++
 		}
 
-		// get latest release, in separate function to isolate defer calls
-		release, err := getRelease(repo)
-		if err != nil {
-			return fmt.Errorf("error getting release: %v", err)
-		}
+		// use immediately invoked function to pass variables to goroutine
+		g.Go(func(i int, destination string) func() error {
+			return func() error {
+				err := downloadAsset(args, destination, i)
+				if err != nil {
+					return fmt.Errorf("error processing asset: %s: %v", args[i], err)
+				}
 
-		// check if already exists
-		record, err := records.Load(repo, filename, destination)
-		if err != nil {
-			return fmt.Errorf("error loading record: %v", err)
-		}
-
-		if _, err := os.Stat(destination + filename); err == nil {
-			// check version match
-			if record.TagName == release.TagName {
-				continue // skip to next loop iteration
+				return nil
 			}
-		}
+		}(i, destination))
+	}
 
-		// acquire asset data
-		var file Asset
-		for _, asset := range release.Assets {
-			if asset.Name == filename {
-				file = asset
-				break
-			}
-		}
-
-		// download the asset
-		err = downloadAsset(destination, filename, file.DownloadURL)
-		if err != nil {
-			return fmt.Errorf("error downloading file: %v", err)
-		}
-
-		// update yaml record with new info
-		record.TagName = release.TagName
-		record.AuthorName = release.Author.Name
-
-		err = records.Write(record)
-		if err != nil {
-			return fmt.Errorf("error writing record: %v", err)
-		}
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("error downloading assets: %v", err)
 	}
 
 	return nil
@@ -148,10 +123,44 @@ func parseDownloadPath(path string) string {
 	return path
 }
 
-func downloadAsset(destination string, filename string, url string) (err error) {
-	response, err := http.Get(url)
+// downloads the asset from the repository, skips if already up to date
+func downloadAsset(args []string, destination string, i int) (err error) {
+	repo := args[i-1]
+	filename := args[i]
+	fmt.Println("Downloading asset:", filename, "from repository:", repo, "to destination:", destination)
+
+	// get latest release, in separate function to isolate defer calls
+	release, err := getRelease(repo)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting release: %v", err)
+	}
+
+	// check if already exists
+	record, err := records.Load(repo, filename, destination)
+	if err != nil {
+		return fmt.Errorf("error loading record: %v", err)
+	}
+
+	if _, err := os.Stat(destination + filename); err == nil {
+		// check version match
+		if record.TagName == release.TagName {
+			return nil // skip to next loop iteration
+		}
+	}
+
+	// acquire asset data
+	var file Asset
+	for _, asset := range release.Assets {
+		if asset.Name == filename {
+			file = asset
+			break
+		}
+	}
+
+	// download the asset
+	response, err := http.Get(file.DownloadURL)
+	if err != nil {
+		return fmt.Errorf("error downloading asset: %v", err)
 	}
 	defer func(Body io.ReadCloser) {
 		closeErr := Body.Close()
@@ -163,7 +172,7 @@ func downloadAsset(destination string, filename string, url string) (err error) 
 	// create file
 	output, err := os.Create(destination + filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output file: %v", err)
 	}
 	defer func(output *os.File) {
 		closeErr := output.Close()
@@ -174,5 +183,14 @@ func downloadAsset(destination string, filename string, url string) (err error) 
 
 	// write information to file
 	_, err = io.Copy(output, response.Body)
+
+	// update yaml record with new info
+	record.TagName = release.TagName
+	record.AuthorName = release.Author.Name
+
+	err = records.Write(record)
+	if err != nil {
+		return fmt.Errorf("error writing record: %v", err)
+	}
 	return err
 }
