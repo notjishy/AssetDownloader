@@ -14,8 +14,10 @@ var Version string = "dev"
 var BuildDate string = "unknown"
 
 func main() {
+	usage := "Usage: assetdownloader <command> [options]\n\nAvailable commands:\n  list\n  download\n  version"
+
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: assetdownloader <command> [options]\n\nAvailable commands:\n  list\n  download\n  version")
+		fmt.Println(usage)
 		os.Exit(1)
 	}
 
@@ -36,5 +38,7 @@ func main() {
 		}
 	case "version":
 		fmt.Println("AssetDownloader Version: " + Version + "\nBuild Date: " + BuildDate)
+	default:
+		fmt.Println("Unknown command: " + os.Args[1] + "\n\n" + usage)
 	}
 }
