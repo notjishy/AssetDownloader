@@ -56,7 +56,6 @@ func Download(args []string) error {
 			return fmt.Errorf("invalid number of arguments provided with download all flag\n\n%s", uString)
 		}
 
-		fmt.Println("Flag identified...")
 		destination = parseDownloadPath(args[len(args)-2])
 	}
 
@@ -127,7 +126,6 @@ func parseDownloadPath(path string) string {
 func downloadAsset(args []string, destination string, i int) (err error) {
 	repo := args[i-1]
 	filename := args[i]
-	fmt.Println("Downloading asset:", filename, "from repository:", repo, "to destination:", destination)
 
 	// get latest release, in separate function to isolate defer calls
 	release, err := getRelease(repo)
