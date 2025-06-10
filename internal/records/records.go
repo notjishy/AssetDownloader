@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strconv"
 
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
@@ -154,13 +153,7 @@ func Load(repo string, filename string, destination string) (Record, error) {
 }
 
 // Remove deletes specifed record and its respective asset file
-func Remove(r string, rs []Record) error {
-	// convert to int
-	rInt, err := strconv.Atoi(r)
-	if err != nil {
-		return fmt.Errorf("error converting to int: %v", err)
-	}
-
+func Remove(rInt int, rs []Record) error {
 	// check provided number is within range of records
 	if rInt > len(rs) || rInt < 1 {
 		return fmt.Errorf("value is out of range (%d), record does not exist", rInt)
@@ -169,7 +162,7 @@ func Remove(r string, rs []Record) error {
 
 	// check if asset file exists and remove if it does
 	path := record.DownloadPath + record.FileName
-	_, err = os.Stat(path)
+	_, err := os.Stat(path)
 	notExists := os.IsNotExist(err)
 	if err != nil && !notExists {
 		return fmt.Errorf("error checking stat for file %s: %v", path, err)

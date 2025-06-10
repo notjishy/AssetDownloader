@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"strconv"
 
 	"golang.org/x/sync/errgroup"
 	"jishe.wtf/assetdownloader/internal/records"
@@ -24,7 +25,14 @@ func Delete(rSlice []string) error {
 	for _, r := range rSlice {
 		g.Go(func(r string, rs []records.Record) func() error {
 			return func() error {
-				err := records.Remove(r, rs)
+				// convert to int
+				rInt, err := strconv.Atoi(r)
+				if err != nil {
+					return fmt.Errorf("error converting to int: %v", err)
+				}
+
+				// delete the record
+				err = records.Remove(rInt, rs)
 				if err != nil {
 					return err
 				}
